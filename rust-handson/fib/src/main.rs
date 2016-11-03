@@ -19,3 +19,10 @@ fn test_induction_case() {
     assert_eq!(fib(26), 121393);
     assert_eq!(fib(38), 39088169);
 }
+
+
+#[test]
+#[should_panic] // テストの失敗を反転させる
+fn it_should_not_works() {
+    assert!(false)
+}
