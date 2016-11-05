@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["takatori <takatorisatoshi@team-lab.com>"]
 
 [dependencies]
-docopt = "0.6.86"
+getopts = "0.2"
