@@ -2,13 +2,14 @@ extern crate getopts;
 
 use std::env;
 use std::io;
+// IOモジュールをまとめてインポートするためのモジュール
 use std::io::prelude::*;
 use std::fs::File;
 use getopts::Options;
 
 
 fn run(filename: String) -> Result<(String), io::Error> {
-    let mut file = try!(File::open(filename));
+    let mut file = try!(File::open(filename)); // Errorが発生した場合returnされる
     let mut content = String::new();
     try!(file.read_to_string(&mut content));
     Ok(content)
@@ -16,12 +17,13 @@ fn run(filename: String) -> Result<(String), io::Error> {
 
 fn with_line_number(content: String) -> String {
     let lines: Vec<String> =
-        content.split("\n")
+        content
+        .split("\n")
         .filter(|line| line.len() > 0)
         .enumerate()
         .map(|(index, line)| format!("{}: {}", index + 1, line))
         .collect();
-    lines.join("\n");
+    lines.join("\n")
 }
 
 fn start(files: Vec<String>, flag_n: bool) {
@@ -50,7 +52,7 @@ fn main() {
 
     parser.optflag("n", "", "Number the output lines, starting at 1.");
 
-    let options = match parsre.parse(&args[1..]) {
+    let options = match parser.parse(&args[1..]) {
         Ok(m) => {m}
         Err(f) => { panic!(f.to_string())}
     };
