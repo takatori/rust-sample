@@ -25,4 +25,11 @@ fn main() {
 
     // ゼロパディング
     println!("{number:0width$}", number=1, width=6);
+
+    // `i32`を保持する`Structure`という名の構造体を定義します
+    struct Structure(i32);
+    
+    // この様にカスタム型を用いる場合、扱いが少々複雑になります。
+    // 以下は動作しません。
+    println!("This struct `{}` wont't print...", Structure(3));
 }
