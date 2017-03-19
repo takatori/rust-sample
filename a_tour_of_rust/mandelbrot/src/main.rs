@@ -6,6 +6,7 @@ use image::ColorType;
 use image::png::PNGEncoder;
 use std::str::FromStr;
 use std::fs::File;
+use std::io::Write;
 
 #[allow(dead_code)]
 fn complex_square_add_loop(c: Complex<f64>) {
@@ -84,7 +85,7 @@ fn render(pixels: &mut [u8],
           upper_left: (f64, f64),
           lower_right: (f64, f64)) {
 
-    assert!(pixel.len() == bounds.0 * bounds.1);
+    assert!(pixels.len() == bounds.0 * bounds.1);
 
     for r in 0..bounds.1 {
         for c in 0..bounds.0 {
@@ -114,6 +115,31 @@ fn write_bitmap(filename: &str,
                 ColorType::Gray(8))?;
     Ok(())
 }
+
+fn main() {
+
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() != 5 {
+        writeln!(std::io::stderr(),
+                 "Usage: mandelbrot FILE PIXELS UPPERLEFT LOWERRIGHT")
+            .unwrap();
+        writeln!(std::io::stderr(),
+                 "Example: {} mande.png 1000x750 -1.20,0.35 -1,0.20",
+                 args[0])
+            .unwrap();
+        std::process::exit(1);
+    }
+
+    let bounds = parse_pair(&args[2], 'x').expect("error parsing image dimensions");
+    let upper_left = parse_pair(&args[3], ',').expect("error parsing upper left corner point");
+    let lower_right = parse_pair(&args[4], ',').expect("error parsing lower right corner point");
+    let mut pixels = vec![0; bounds.0 * bounds.1];
+
+    render(&mut pixels, bounds, upper_left, lower_right);
+    write_bitmap(&args[1], &pixels, bounds).expect("error writing PNG file");
+}
+
 
 #[test]
 fn test_parse_pair() {
