@@ -1,0 +1,84 @@
+#!bin/bash
+
+# Copyright 2017 Satoshi Takatori. All Rights Reserved.
+#
+# Licensed under the MIT License, <LICENSE or http://opensource.org/licenses/MIT>.
+# This file may not be copied, modified, or distributed except according to those terms.
+
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+PREFIX="${GREEN}[PRECOMMIT]${NC}"
+FAILURE="${RED}FAILED${NC}"
+WARNING="${RED}[WARNING]${NC}"
+SKIPPED="${YELLOW}SKIPPED${NC}"
+SUCCESS="${GREEN}ok${NC}"
+
+if git rev-parse --verify HEAD &> /dev/null
+then
+    against=HEAD
+else
+    # Initial commit: diff against an empty tree object
+    against=""
+fi
+
+FAILED=0
+
+print "${PREFIX} Checking that all filenames are ascill ..."
+if test $(git diff --cached --name-only --diff-filter=A -z $against | LC_ALL=C tr -d '[ -~]\0 | wc -c') != 0
+then
+    FAILED=1
+    printf "${FAILED}\n"
+else
+    printf "${SUCCESS}\n"
+fi
+
+printf "${PREFIX} Checking for bad whitespace ..."
+git diff-index --check --cached $against -- &>/dev/null
+if [ "$?" != 0 ]; then
+    FAILED=1
+    printf "${FAILED}\n"
+else
+    printf "${SUCCESS}\n"
+fi
+    
+printf  "${PREFIX} Checking for shasum ..."
+command -v shasum &>/dev/null
+if [ $? == 0 ]; then
+    printf "${SUCCESS}\n"
+else
+    FAILED=1
+    printf "${FAILED}\n"    
+fi
+
+# Just check that running rustfmt doesn't do anything to the file. I do this instead of
+# modifying the file because I don't want to mess with the developer's index, which may
+# not only contain discrete files.
+printf "${PREFIX} Checking formatting ... "
+FMTRESULT=0
+diff=""
+for file in $(git diff --name-only --cached);
+do
+    if [ ${file: -3} == ".rs" ]; then
+        diff="$diff$(rustfmt --skip-children --write-mode=diff $file)"
+    fi
+done
+if grep --quiet "^Diff at line" <<< "$diff"; then
+    FMTRESULT=1
+fi
+
+
+if [ "${TARPC_SKIP_RUSTFMT}" == 1 ]; then
+	printf "${SKIPPED}\n"$?
+elif [ ${FMTRESULT} != 0 ]; then
+	FAILED=1
+	printf "${FAILURE}\n"
+    echo "$diff" | sed 's/Using rustfmt config file.*$/d/'
+else
+	printf "${SUCCESS}\n"
+fi
+
+exit ${FAILED}
